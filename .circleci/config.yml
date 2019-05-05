@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/viart/device-locator
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - deploy:
+          command: |
+            REPO=viart/device-locator
+            NAME=$REPO:$CIRCLE_SHA1
+            docker build -t $NAME .
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker tag $NAME $REPO:latest
+              docker push $REPO:latest
+            fi

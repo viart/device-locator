@@ -1,0 +1,12 @@
+mqtt:
+  broker: tcp://server:1883
+  # username: admin
+  # password: secret
+  id: ilocator
+  lwt: ilocator/status
+  preffix: owntracks
+accounts:
+  - username: steve@icloud.com
+    password: xxx
+  - username: my@appleid.acc
+    password: yyy
