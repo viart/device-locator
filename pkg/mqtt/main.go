@@ -66,7 +66,7 @@ func (m *MqttClient) Track(acc string, res *fmip.FmipResponse) {
 
 		//TODO: handle error
 		if payload, err := json.Marshal(data); err == nil {
-			topic := fmt.Sprintf("%s/%s/%s", m.Cfg.Preffix, acc, strings.ReplaceAll(device.DeviceDisplayName, "-", ""))
+			topic := fmt.Sprintf("%s/%s/%s", m.Cfg.Preffix, acc, strings.ReplaceAll(device.DeviceDisplayName, " ", ""))
 			m.Publish(topic, 1, false, payload)
 		}
 	}

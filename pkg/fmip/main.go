@@ -100,8 +100,6 @@ func (s *ISession) makeRequest(accountName string, password string, prsID int) (
 		return nil, err
 	}
 
-	fmt.Println(string(body))
-
 	response := &FmipResponse{}
 	if err = json.Unmarshal(body, response); err != nil {
 		return nil, err
