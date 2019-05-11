@@ -2,6 +2,8 @@ package fmip
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +17,7 @@ type Credentials struct {
 }
 
 type ISession struct {
-	http.Client
+	*http.Client
 }
 
 var defaultHeaders = map[string]string{
@@ -50,10 +52,29 @@ type FmipResponse struct {
 	} `json:"content"`
 }
 
-func NewISession() *ISession {
-	return &ISession{
-		Client: http.Client{},
+func NewISession() (*ISession, error) {
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
 	}
+
+	// Workaround for icloud self-signed cert
+	certs, err := ioutil.ReadFile("fmipmobile.crt")
+	if err != nil {
+		return nil, fmt.Errorf("Can't read fmipmobile.crt file: %v", err)
+	}
+
+	if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+		return nil, fmt.Errorf("Cert file is not added")
+	}
+
+	return &ISession{
+		Client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{RootCAs: rootCAs},
+			},
+		},
+	}, nil
 }
 
 func (s *ISession) actionURI(accountName string, action string) string {

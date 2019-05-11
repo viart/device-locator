@@ -5,8 +5,7 @@ RUN mkdir /user && \
   echo 'nobody:x:65534:65534:nobody:/:' > /user/passwd && \
   echo 'nobody:x:65534:' > /user/group
 
-RUN apk add -U --no-cache ca-certificates git \
-  && update-ca-certificates
+RUN apk add -U --no-cache ca-certificates git && update-ca-certificates
 
 WORKDIR /src
 
@@ -19,11 +18,12 @@ RUN CGO_ENABLED=0 go build -installsuffix 'static' -o /app ./cmd/device-locator/
 
 FROM scratch AS final
 
-ADD https://curl.haxx.se/ca/cacert.pem /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /user/group /user/passwd /etc/
-# COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app /app
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+WORKDIR /app
+COPY --from=builder /src/fmipmobile.crt /app ./
 
 USER nobody:nobody
 
-ENTRYPOINT ["/app"]
+ENTRYPOINT ["./app"]

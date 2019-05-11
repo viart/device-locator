@@ -36,10 +36,13 @@ func main() {
 
 	mqtt, err := mqtt.New(cfg.Mqtt)
 	if err != nil {
-		log.Fatalf("Can't connet to MQTT server, %v", err)
+		log.Fatalf("Can't connect to MQTT server, %v", err)
 	}
 
-	session := fmip.NewISession()
+	session, err := fmip.NewISession()
+	if err != nil {
+		log.Fatalf("Can't init https client, %v", err)
+	}
 
 	done := make(chan bool, 1)
 	errs := make(chan error)
