@@ -20,10 +20,8 @@ FROM scratch AS final
 
 COPY --from=builder /user/group /user/passwd /etc/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-WORKDIR /app
-COPY --from=builder /src/fmipmobile.crt /app ./
+COPY --from=builder /app /app
 
 USER nobody:nobody
 
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["/app"]

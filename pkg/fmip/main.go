@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strconv"
 )
@@ -31,6 +32,8 @@ var defaultHeaders = map[string]string{
 	"User-Agent":            "FindMyiPhone/500 CFNetwork/758.4.3 Darwin/15.5.0",
 }
 
+const fmipServer = "fmipmobile.icloud.com"
+
 type FmipResponse struct {
 	ServerContext struct {
 		AuthToken string `json:"authToken"`
@@ -53,20 +56,27 @@ type FmipResponse struct {
 }
 
 func NewISession() (*ISession, error) {
+	conn, err := net.Dial("tcp", fmipServer+":443")
+	if err != nil {
+		return nil, err
+	}
+
+	client := tls.Client(conn, &tls.Config{
+		ServerName:         fmipServer,
+		InsecureSkipVerify: true,
+	})
+	defer client.Close()
+
+	if err := client.Handshake(); err != nil {
+		return nil, fmt.Errorf("SSL handshake failed: %v", err)
+	}
+
 	rootCAs, _ := x509.SystemCertPool()
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
 
-	// Workaround for icloud self-signed cert
-	certs, err := ioutil.ReadFile("fmipmobile.crt")
-	if err != nil {
-		return nil, fmt.Errorf("Can't read fmipmobile.crt file: %v", err)
-	}
-
-	if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-		return nil, fmt.Errorf("Cert file is not added")
-	}
+	rootCAs.AddCert(client.ConnectionState().PeerCertificates[0])
 
 	return &ISession{
 		Client: &http.Client{
@@ -78,7 +88,7 @@ func NewISession() (*ISession, error) {
 }
 
 func (s *ISession) actionURI(accountName string, action string) string {
-	return fmt.Sprintf("https://fmipmobile.icloud.com/fmipservice/device/%s/%s", accountName, action)
+	return fmt.Sprintf("https://%s/fmipservice/device/%s/%s", fmipServer, accountName, action)
 }
 
 func (s *ISession) makeRequest(accountName string, password string, prsID int) (*FmipResponse, error) {
