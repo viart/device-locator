@@ -72,9 +72,11 @@ func main() {
 
 			mqtt.Track(account.Username, res)
 
-			for {
-				// 5s+
-				time.Sleep(time.Duration(5+rand.Intn(55)) * time.Second)
+			ticker := time.NewTicker(time.Minute * 15)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				time.Sleep(time.Duration(rand.Intn(15)) * time.Second)
 				res, err := session.Refresh(account.Username, prsID, authToken)
 				if err != nil {
 					errs <- fmt.Errorf("Unable to refresh the iClient: %s", err)
